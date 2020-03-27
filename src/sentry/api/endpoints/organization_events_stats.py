@@ -9,8 +9,10 @@ from rest_framework.exceptions import ParseError
 from sentry import features
 from sentry.api.bases import OrganizationEventsEndpointBase, OrganizationEventsError, NoProjects
 from sentry.api.event_search import resolve_field_list, InvalidSearchQuery, get_function_alias
+from sentry.api.exceptions import ResourceDoesNotExist
 from sentry.api.serializers.snuba import SnubaTSResultSerializer
 from sentry.discover.utils import transform_aliases_and_query
+from sentry.discover.models import KeyTransaction
 from sentry.snuba import discover
 from sentry.utils import snuba
 from sentry.utils.dates import parse_stats_period
@@ -31,6 +33,7 @@ class OrganizationEventsStatsEndpoint(OrganizationEventsEndpointBase):
             columns = request.GET.getlist("yAxis", ["count()"])
             params = self.get_filter_params(request, organization)
             rollup = self.get_rollup(request, params)
+            key_transactions = request.GET.get("keyTransactions")
             # Backwards compatibility for incidents which uses the old
             # column aliases as it straddles both versions of events/discover.
             # We will need these aliases until discover2 flags are enabled for all
@@ -43,16 +46,32 @@ class OrganizationEventsStatsEndpoint(OrganizationEventsEndpointBase):
             }
             query_columns = [column_map.get(column, column) for column in columns]
 
-            result = discover.timeseries_query(
-                selected_columns=query_columns,
-                query=request.GET.get("query"),
-                params=params,
-                rollup=rollup,
-                reference_event=self.reference_event(
-                    request, organization, params.get("start"), params.get("end")
-                ),
-                referrer="api.organization-event-stats",
-            )
+            if key_transactions:
+                queryset = KeyTransaction.objects.filter(
+                    organization=organization, owner=request.user
+                )
+                if not queryset.exists():
+                    raise ResourceDoesNotExist
+
+                result = discover.key_transaction_timeseries_query(
+                    selected_columns=query_columns,
+                    user_query=request.GET.get("query"),
+                    params=params,
+                    rollup=rollup,
+                    referrer="api.organization-event-stats.key_transactions",
+                    queryset=queryset,
+                )
+            else:
+                result = discover.timeseries_query(
+                    selected_columns=query_columns,
+                    query=request.GET.get("query"),
+                    params=params,
+                    rollup=rollup,
+                    reference_event=self.reference_event(
+                        request, organization, params.get("start"), params.get("end")
+                    ),
+                    referrer="api.organization-event-stats",
+                )
         except InvalidSearchQuery as err:
             raise ParseError(detail=six.text_type(err))
         serializer = SnubaTSResultSerializer(organization, None, request.user)

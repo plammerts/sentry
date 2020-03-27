@@ -38,6 +38,7 @@ __all__ = (
     "InvalidSearchQuery",
     "create_reference_event_conditions",
     "query",
+    "key_transaction_query",
     "timeseries_query",
     "get_pagination_ids",
     "get_facets",
@@ -611,7 +612,66 @@ def query(
     return transform_results(result, translated_columns, snuba_args)
 
 
-def timeseries_query(selected_columns, query, params, rollup, reference_event=None, referrer=None):
+def key_transaction_conditions(queryset):
+    """
+        The snuba query for transactions is of the form
+        (transaction="1" AND project=1) OR (transaction="2" and project=2) ...
+        which the schema intentionally doesn't support so we cannot do an AND in OR
+        so here the "and" operator is being instead to do an AND in OR query
+    """
+    return [
+        [
+            # First layer is Ands
+            [
+                # Second layer is Ors
+                [
+                    "and",
+                    [
+                        [
+                            "equals",
+                            # Without the outer ' here, the transaction will be treated as another column
+                            # instead of a string. This isn't an injection risk since snuba is smart enough to
+                            # handle escaping for us.
+                            ["transaction", u"'{}'".format(transaction.transaction)],
+                        ],
+                        ["equals", ["project_id", transaction.project.id]],
+                    ],
+                ],
+                "=",
+                1,
+            ]
+            for transaction in queryset
+        ]
+    ]
+
+
+def key_transaction_query(selected_columns, user_query, params, orderby, referrer, queryset):
+    return query(
+        selected_columns,
+        user_query,
+        params,
+        orderby=orderby,
+        referrer=referrer,
+        conditions=key_transaction_conditions(queryset),
+    )
+
+
+def key_transaction_timeseries_query(
+    selected_columns, user_query, params, rollup, referrer, queryset
+):
+    return timeseries_query(
+        selected_columns,
+        user_query,
+        params,
+        rollup,
+        referrer=referrer,
+        conditions=key_transaction_conditions(queryset),
+    )
+
+
+def timeseries_query(
+    selected_columns, query, params, rollup, reference_event=None, referrer=None, conditions=None
+):
     """
     High-level API for doing arbitrary user timeseries queries against events.
 
@@ -632,6 +692,8 @@ def timeseries_query(selected_columns, query, params, rollup, reference_event=No
     reference_event (ReferenceEvent) A reference event object. Used to generate additional
                     conditions based on the provided reference.
     referrer (str|None) A referrer string to help locate the origin of this query.
+    conditions (Sequence[any]) List of conditions that are passed directly to snuba without
+                    any additional processing.
     """
     # TODO(evanh): These can be removed once we migrate the frontend / saved queries
     # to use the new function values
@@ -664,6 +726,9 @@ def timeseries_query(selected_columns, query, params, rollup, reference_event=No
     # with other parts of the timeseries endpoint expectations
     if len(snuba_args["aggregations"]) == 1:
         snuba_args["aggregations"][0][2] = "count"
+
+    if conditions is not None:
+        snuba_args["conditions"].extend(conditions)
 
     result = raw_query(
         aggregations=snuba_args.get("aggregations"),
