@@ -56,6 +56,9 @@ class KeyTransactionEndpoint(OrganizationEventsV2EndpointBase):
 
         queryset = KeyTransaction.objects.filter(organization=organization, owner=request.user)
 
+        if queryset.count() == 0:
+            return Response(status=204)
+
         results = query(
             fields,
             None,
