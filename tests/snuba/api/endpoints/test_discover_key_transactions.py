@@ -156,7 +156,7 @@ class KeyTransactionTest(APITestCase):
                 },
             )
 
-        assert response.status_code == 204
+        assert response.status_code == 404
 
     def test_is_key_transaciton(self):
         event_data = load_data("transaction")
