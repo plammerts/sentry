@@ -191,7 +191,8 @@ class KeyTransactionTest(APITestCase):
                 url, {"project": [self.project.id], "transaction": event_data["transaction"]}
             )
 
-        assert response.status_code == 404
+        assert response.status_code == 200
+        assert not response.data["isKey"]
 
     @patch("django.utils.timezone.now")
     def test_get_key_transactions(self, mock_now):

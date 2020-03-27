@@ -32,7 +32,7 @@ class IsKeyTransactionEndpoint(KeyTransactionBase):
             )
             return Response({"isKey": True}, status=200)
         except KeyTransaction.DoesNotExist:
-            raise ResourceDoesNotExist
+            return Response({"isKey": False}, status=200)
 
 
 class KeyTransactionEndpoint(KeyTransactionBase):
