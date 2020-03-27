@@ -68,7 +68,7 @@ class KeyTransactionEndpoint(KeyTransactionBase):
 
         queryset = KeyTransaction.objects.filter(organization=organization, owner=request.user)
 
-        if queryset.count() == 0:
+        if not queryset.exists():
             return Response(status=204)
 
         results = query(
