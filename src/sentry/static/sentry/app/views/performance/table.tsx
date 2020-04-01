@@ -244,7 +244,7 @@ class Table extends React.Component<Props> {
     const columnOrder = eventView.getColumns();
 
     return (
-      <EventsV2 eventView={eventView} organization={organization} location={location}>
+      <EventsV2 eventView={eventView} orgSlug={organization.slug} location={location}>
         {({pageLinks, isLoading, tableData}) => (
           <div>
             <StyledSearchBar

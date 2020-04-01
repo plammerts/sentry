@@ -1,7 +1,6 @@
 import React from 'react';
 import {Location} from 'history';
 
-import {Organization} from 'app/types';
 import {Client} from 'app/api';
 import withApi from 'app/utils/withApi';
 import EventView, {isAPIPayloadSimilar} from 'app/utils/discover/eventView';
@@ -18,7 +17,7 @@ type Props = {
   api: Client;
   location: Location;
   eventView: EventView;
-  organization: Organization;
+  orgSlug: string;
   extraQuery?: {[key: string]: any};
 
   children: (props: ChildrenProps) => React.ReactNode;
@@ -61,13 +60,13 @@ class EventsV2 extends React.Component<Props, State> {
   };
 
   fetchData = () => {
-    const {eventView, organization, location, extraQuery} = this.props;
+    const {eventView, orgSlug, location, extraQuery} = this.props;
 
     if (!eventView.isValid()) {
       return;
     }
 
-    const url = `/organizations/${organization.slug}/eventsv2/`;
+    const url = `/organizations/${orgSlug}/eventsv2/`;
     const tableFetchID = Symbol('tableFetchID');
     const apiPayload = eventView.getEventsAPIPayload(location);
 
