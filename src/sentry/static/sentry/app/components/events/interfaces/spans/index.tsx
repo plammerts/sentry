@@ -73,7 +73,8 @@ class SpansInterface extends React.Component<Props, State> {
         'trace.parent_span',
       ],
       orderby: '-timestamp',
-      query: `event.type:error trace:${parsedTrace.traceID}`,
+      query: `event.type:error trace:${parsedTrace.traceID} transaction:${event.title ||
+        ''}`,
       projects: [],
       version: 2,
       start,
