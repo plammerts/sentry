@@ -15,6 +15,7 @@ import {generateEventSlug, eventDetailsRoute} from 'app/utils/discover/urls';
 import EventView from 'app/utils/discover/eventView';
 import getDynamicText from 'app/utils/getDynamicText';
 import {assert} from 'app/types/utils';
+import AlertMessage from 'app/components/alertMessage';
 
 import {ProcessedSpanType, RawSpanType, ParsedTraceType} from './types';
 import {isGapSpan, getTraceDateTimeRange} from './utils';
@@ -211,59 +212,70 @@ class SpanDetail extends React.Component<Props, State> {
     }
 
     return (
-      <SpanDetailContainer
-        data-component="span-detail"
-        onClick={event => {
-          // prevent toggling the span detail
-          event.stopPropagation();
-        }}
-      >
-        <table className="table key-value">
-          <tbody>
-            <Row title="Span ID" extra={this.renderTraversalButton()}>
-              {span.span_id}
-            </Row>
-            <Row title="Trace ID" extra={this.renderTraceButton()}>
-              {span.trace_id}
-            </Row>
-            <Row title="Parent Span ID">{span.parent_span_id || ''}</Row>
-            <Row title="Description">{span?.description ?? ''}</Row>
-            <Row title="Start Date">
-              {getDynamicText({
-                fixed: 'Mar 16, 2020 9:10:12 AM UTC',
-                value: (
-                  <React.Fragment>
-                    <DateTime date={startTimestamp * 1000} />
-                    {` (${startTimestamp})`}
-                  </React.Fragment>
-                ),
-              })}
-            </Row>
-            <Row title="End Date">
-              {getDynamicText({
-                fixed: 'Mar 16, 2020 9:10:13 AM UTC',
-                value: (
-                  <React.Fragment>
-                    <DateTime date={endTimestamp * 1000} />
-                    {` (${endTimestamp})`}
-                  </React.Fragment>
-                ),
-              })}
-            </Row>
-            <Row title="Duration">{durationString}</Row>
-            <Row title="Operation">{span.op || ''}</Row>
-            <Row title="Same Process as Parent">
-              {String(!!span.same_process_as_parent)}
-            </Row>
-            <Tags span={span} />
-            {map(span?.data ?? {}, (value, key) => (
-              <Row title={key} key={key}>
-                {JSON.stringify(value, null, 4) || ''}
+      <div>
+        <AlertMessage
+          alert={{
+            id: 'id',
+            message: '2 out of the 25 errors occurred in this span.',
+            type: 'error',
+          }}
+          system
+        />
+
+        <SpanDetailContainer
+          data-component="span-detail"
+          onClick={event => {
+            // prevent toggling the span detail
+            event.stopPropagation();
+          }}
+        >
+          <table className="table key-value">
+            <tbody>
+              <Row title="Span ID" extra={this.renderTraversalButton()}>
+                {span.span_id}
               </Row>
-            ))}
-          </tbody>
-        </table>
-      </SpanDetailContainer>
+              <Row title="Trace ID" extra={this.renderTraceButton()}>
+                {span.trace_id}
+              </Row>
+              <Row title="Parent Span ID">{span.parent_span_id || ''}</Row>
+              <Row title="Description">{span?.description ?? ''}</Row>
+              <Row title="Start Date">
+                {getDynamicText({
+                  fixed: 'Mar 16, 2020 9:10:12 AM UTC',
+                  value: (
+                    <React.Fragment>
+                      <DateTime date={startTimestamp * 1000} />
+                      {` (${startTimestamp})`}
+                    </React.Fragment>
+                  ),
+                })}
+              </Row>
+              <Row title="End Date">
+                {getDynamicText({
+                  fixed: 'Mar 16, 2020 9:10:13 AM UTC',
+                  value: (
+                    <React.Fragment>
+                      <DateTime date={endTimestamp * 1000} />
+                      {` (${endTimestamp})`}
+                    </React.Fragment>
+                  ),
+                })}
+              </Row>
+              <Row title="Duration">{durationString}</Row>
+              <Row title="Operation">{span.op || ''}</Row>
+              <Row title="Same Process as Parent">
+                {String(!!span.same_process_as_parent)}
+              </Row>
+              <Tags span={span} />
+              {map(span?.data ?? {}, (value, key) => (
+                <Row title={key} key={key}>
+                  {JSON.stringify(value, null, 4) || ''}
+                </Row>
+              ))}
+            </tbody>
+          </table>
+        </SpanDetailContainer>
+      </div>
     );
   }
 }

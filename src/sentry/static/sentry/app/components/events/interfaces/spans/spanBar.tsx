@@ -9,6 +9,7 @@ import Count from 'app/components/count';
 import Tooltip from 'app/components/tooltip';
 import InlineSvg from 'app/components/inlineSvg';
 import EventView from 'app/utils/discover/eventView';
+import {TableDataRow} from 'app/views/eventsV2/table/types';
 
 import {
   toPercent,
@@ -182,6 +183,7 @@ type SpanBarProps = {
   toggleSpanTree: () => void;
   isCurrentSpanFilteredOut: boolean;
   eventView: EventView;
+  spanErrors: TableDataRow[];
 };
 
 type SpanBarState = {
@@ -374,10 +376,13 @@ class SpanBar extends React.Component<SpanBarProps, SpanBarState> {
   };
 
   renderTitle = () => {
-    const {span, treeDepth} = this.props;
+    const {span, treeDepth, spanErrors} = this.props;
 
-    const op = getSpanOperation(span) ? (
-      <strong>{`${getSpanOperation(span)} \u2014 `}</strong>
+    const operationName = getSpanOperation(span) ? (
+      <strong>
+        <OperationName spanErrors={spanErrors}>{getSpanOperation(span)}</OperationName>
+        {` \u2014 `}
+      </strong>
     ) : (
       ''
     );
@@ -395,7 +400,7 @@ class SpanBar extends React.Component<SpanBarProps, SpanBarState> {
           }}
         >
           <span>
-            {op}
+            {operationName}
             {description}
           </span>
         </SpanBarTitle>
@@ -1015,6 +1020,16 @@ const WarningIcon = styled(InlineSvg)`
 const Chevron = styled(InlineSvg)`
   width: 7px;
   margin-left: ${space(0.25)};
+`;
+
+const OperationName = styled('span')<{spanErrors: TableDataRow[]}>`
+  color: ${props => {
+    if (props.spanErrors.length > 0) {
+      return props.theme.error;
+    }
+
+    return 'inherit';
+  }};
 `;
 
 export default SpanBar;

@@ -154,6 +154,7 @@ class SpansInterface extends React.Component<Props, State> {
                     orgId={orgId}
                     eventView={eventView}
                     parsedTrace={parsedTrace}
+                    spansWithErrors={tableData}
                   />
                 </Panel>
               </React.Fragment>
