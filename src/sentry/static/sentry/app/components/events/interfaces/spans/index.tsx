@@ -11,6 +11,8 @@ import space from 'app/styles/space';
 import EventView from 'app/utils/discover/eventView';
 import EventsV2 from 'app/utils/discover/eventsv2';
 import {stringifyQueryObject, QueryResults} from 'app/utils/tokenizeSearch';
+import AlertLink from 'app/components/alertLink';
+import {IconWarning} from 'app/icons';
 
 import {SentryTransactionEvent, ParsedTraceType} from './types';
 import {parseTrace, getTraceDateTimeRange} from './utils';
@@ -74,7 +76,7 @@ class SpansInterface extends React.Component<Props, State> {
 
     const traceErrorsEventView = EventView.fromSavedQuery({
       id: undefined,
-      name: 'Related errors',
+      name: `Errors related to transaction ${parsedTrace.rootSpanID}`,
       fields: [
         'title',
         'project',
@@ -93,12 +95,6 @@ class SpansInterface extends React.Component<Props, State> {
 
     return (
       <div>
-        <StyledSearchBar
-          defaultQuery=""
-          query={this.state.searchQuery || ''}
-          placeholder={t('Search for spans')}
-          onSearch={this.handleSpanFilter}
-        />
         <EventsV2 location={location} eventView={traceErrorsEventView} orgSlug={orgId}>
           {({isLoading, tableData}) => {
             if (isLoading) {
@@ -107,9 +103,34 @@ class SpansInterface extends React.Component<Props, State> {
 
             console.log('tableData', tableData);
 
-            return <div>hello</div>;
+            const numOfErrors = tableData?.data.length || 0;
+
+            if (numOfErrors === 0) {
+              return null;
+            }
+
+            const label =
+              numOfErrors > 1
+                ? t(`There were %d errors associated with this event.`, numOfErrors)
+                : t(`There was an error associated with this event.`);
+
+            return (
+              <AlertLink
+                to={traceErrorsEventView.getResultsViewUrlTarget(orgId)}
+                icon={<IconWarning />}
+                priority="error"
+              >
+                {label}
+              </AlertLink>
+            );
           }}
         </EventsV2>
+        <StyledSearchBar
+          defaultQuery=""
+          query={this.state.searchQuery || ''}
+          placeholder={t('Search for spans')}
+          onSearch={this.handleSpanFilter}
+        />
         <Panel>
           <TraceView
             event={event}
