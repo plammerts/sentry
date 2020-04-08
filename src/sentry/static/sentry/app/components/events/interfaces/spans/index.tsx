@@ -53,6 +53,41 @@ class SpansInterface extends React.Component<Props, State> {
     });
   };
 
+  renderTraceErrorsAlert({
+    isLoading,
+    numOfErrors,
+    traceErrorsEventView,
+  }: {
+    isLoading: boolean;
+    numOfErrors: number;
+    traceErrorsEventView: EventView;
+  }) {
+    if (isLoading) {
+      return null;
+    }
+
+    if (numOfErrors === 0) {
+      return null;
+    }
+
+    const {orgId} = this.props;
+
+    const label =
+      numOfErrors > 1
+        ? t(`There were %d errors associated with this event.`, numOfErrors)
+        : t(`There was an error associated with this event.`);
+
+    return (
+      <AlertLink
+        to={traceErrorsEventView.getResultsViewUrlTarget(orgId)}
+        icon={<IconWarning />}
+        priority="error"
+      >
+        {label}
+      </AlertLink>
+    );
+  }
+
   render() {
     const {event, orgId, eventView, location} = this.props;
     const {parsedTrace} = this.state;
@@ -97,49 +132,34 @@ class SpansInterface extends React.Component<Props, State> {
       <div>
         <EventsV2 location={location} eventView={traceErrorsEventView} orgSlug={orgId}>
           {({isLoading, tableData}) => {
-            if (isLoading) {
-              return null;
-            }
-
-            console.log('tableData', tableData);
-
             const numOfErrors = tableData?.data.length || 0;
 
-            if (numOfErrors === 0) {
-              return null;
-            }
-
-            const label =
-              numOfErrors > 1
-                ? t(`There were %d errors associated with this event.`, numOfErrors)
-                : t(`There was an error associated with this event.`);
-
             return (
-              <AlertLink
-                to={traceErrorsEventView.getResultsViewUrlTarget(orgId)}
-                icon={<IconWarning />}
-                priority="error"
-              >
-                {label}
-              </AlertLink>
+              <React.Fragment>
+                {this.renderTraceErrorsAlert({
+                  isLoading,
+                  numOfErrors,
+                  traceErrorsEventView,
+                })}
+                <StyledSearchBar
+                  defaultQuery=""
+                  query={this.state.searchQuery || ''}
+                  placeholder={t('Search for spans')}
+                  onSearch={this.handleSpanFilter}
+                />
+                <Panel>
+                  <TraceView
+                    event={event}
+                    searchQuery={this.state.searchQuery}
+                    orgId={orgId}
+                    eventView={eventView}
+                    parsedTrace={parsedTrace}
+                  />
+                </Panel>
+              </React.Fragment>
             );
           }}
         </EventsV2>
-        <StyledSearchBar
-          defaultQuery=""
-          query={this.state.searchQuery || ''}
-          placeholder={t('Search for spans')}
-          onSearch={this.handleSpanFilter}
-        />
-        <Panel>
-          <TraceView
-            event={event}
-            searchQuery={this.state.searchQuery}
-            orgId={orgId}
-            eventView={eventView}
-            parsedTrace={parsedTrace}
-          />
-        </Panel>
       </div>
     );
   }
