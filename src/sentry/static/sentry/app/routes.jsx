@@ -1298,6 +1298,16 @@ function routes() {
           />
         </Route>
 
+        <Route
+          path="/organizations/:orgId/activity/"
+          componentPromise={() =>
+            import(
+              /* webpackChunkName: "OrganizationActivity" */ 'app/views/organizationActivity'
+            )
+          }
+          component={errorHandler(LazyLoad)}
+        />
+
         {/* Admin/manage routes */}
         <Route
           path="/manage/"
@@ -1433,15 +1443,6 @@ function routes() {
             componentPromise={() =>
               import(
                 /* webpackChunkName: "OrganizationStats" */ 'app/views/organizationStats'
-              )
-            }
-            component={errorHandler(LazyLoad)}
-          />
-          <Route
-            path="/organizations/:orgId/activity/"
-            componentPromise={() =>
-              import(
-                /* webpackChunkName: "OrganizationActivity" */ 'app/views/organizationActivity'
               )
             }
             component={errorHandler(LazyLoad)}
