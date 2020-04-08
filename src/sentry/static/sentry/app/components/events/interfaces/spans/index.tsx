@@ -10,6 +10,7 @@ import {Panel} from 'app/components/panels';
 import space from 'app/styles/space';
 import EventView from 'app/utils/discover/eventView';
 import EventsV2 from 'app/utils/discover/eventsv2';
+import {stringifyQueryObject, QueryResults} from 'app/utils/tokenizeSearch';
 
 import {SentryTransactionEvent, ParsedTraceType} from './types';
 import {parseTrace, getTraceDateTimeRange} from './utils';
@@ -61,9 +62,19 @@ class SpansInterface extends React.Component<Props, State> {
       end: parsedTrace.traceEndTimestamp,
     });
 
+    const conditions: QueryResults = {
+      query: [],
+      'event.type': ['error'],
+      trace: [parsedTrace.traceID],
+    };
+
+    if (typeof event.title === 'string') {
+      conditions.transaction = [event.title];
+    }
+
     const traceErrorsEventView = EventView.fromSavedQuery({
       id: undefined,
-      name: `Error events`,
+      name: 'Related errors',
       fields: [
         'title',
         'project',
@@ -73,8 +84,7 @@ class SpansInterface extends React.Component<Props, State> {
         'trace.parent_span',
       ],
       orderby: '-timestamp',
-      query: `event.type:error trace:${parsedTrace.traceID} transaction:${event.title ||
-        ''}`,
+      query: stringifyQueryObject(conditions),
       projects: [],
       version: 2,
       start,
